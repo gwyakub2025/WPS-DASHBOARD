@@ -163,45 +163,64 @@ function App() {
 
             {/* Row 4: Detailed Lists - Tabbed View */}
             <div className="mt-8">
-              <div className="flex items-center gap-2 mb-0 overflow-x-auto">
+              <div className="flex items-end gap-1 mb-0 px-2">
+                {/* PAID TAB */}
                 <button 
                   onClick={() => setActiveTab('paid')}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-t-xl text-sm font-bold border-t border-x transition-colors ${
+                  className={`flex items-center gap-3 px-6 py-4 rounded-t-lg text-sm font-black border-t-4 transition-all relative top-[2px] z-10 ${
                     activeTab === 'paid' 
-                      ? 'bg-gw-card border-gw-line text-gw-teal' 
-                      : 'bg-transparent border-transparent text-gw-muted hover:text-gw-text hover:bg-gw-panel'
+                      ? 'bg-white border-t-gw-teal border-x-2 border-gw-line text-gw-teal2 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]' 
+                      : 'bg-gw-line/50 border-t-transparent border-transparent text-gw-muted hover:text-gw-text hover:bg-white/60 mb-0.5'
                   }`}
                 >
-                  <ListChecks size={16} />
-                  Paid List <span className="opacity-60 text-xs ml-1">({classifyRows.paid.length})</span>
+                  <ListChecks size={18} className={activeTab === 'paid' ? 'text-gw-teal' : 'text-gw-muted'} />
+                  <span className="uppercase tracking-tight">Paid List</span>
+                  <span className={`px-2.5 py-1 rounded-md text-[11px] font-black leading-none ${
+                    activeTab === 'paid' ? 'bg-gw-teal text-white shadow-sm' : 'bg-gw-line text-gw-text/60'
+                  }`}>
+                    {classifyRows.paid.length}
+                  </span>
                 </button>
                 
+                {/* DUE TAB */}
                 <button 
                   onClick={() => setActiveTab('due')}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-t-xl text-sm font-bold border-t border-x transition-colors ${
+                  className={`flex items-center gap-3 px-6 py-4 rounded-t-lg text-sm font-black border-t-4 transition-all relative top-[2px] z-10 ${
                     activeTab === 'due' 
-                      ? 'bg-gw-card border-gw-line text-gw-danger' 
-                      : 'bg-transparent border-transparent text-gw-muted hover:text-gw-text hover:bg-gw-panel'
+                      ? 'bg-white border-t-gw-danger border-x-2 border-gw-line text-red-800 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]' 
+                      : 'bg-gw-line/50 border-t-transparent border-transparent text-gw-muted hover:text-gw-text hover:bg-white/60 mb-0.5'
                   }`}
                 >
-                  <AlertCircle size={16} />
-                  Need To Pay <span className="opacity-60 text-xs ml-1">({classifyRows.due.length})</span>
+                  <AlertCircle size={18} className={activeTab === 'due' ? 'text-gw-danger' : 'text-gw-muted'} />
+                  <span className="uppercase tracking-tight">Need To Pay</span>
+                  <span className={`px-2.5 py-1 rounded-md text-[11px] font-black leading-none ${
+                    activeTab === 'due' ? 'bg-gw-danger text-white shadow-sm' : 'bg-gw-line text-gw-text/60'
+                  }`}>
+                    {classifyRows.due.length}
+                  </span>
                 </button>
 
+                {/* REMARKS TAB */}
                 <button 
                   onClick={() => setActiveTab('remarks')}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-t-xl text-sm font-bold border-t border-x transition-colors ${
+                  className={`flex items-center gap-3 px-6 py-4 rounded-t-lg text-sm font-black border-t-4 transition-all relative top-[2px] z-10 ${
                     activeTab === 'remarks' 
-                      ? 'bg-gw-card border-gw-line text-orange-400' 
-                      : 'bg-transparent border-transparent text-gw-muted hover:text-gw-text hover:bg-gw-panel'
+                      ? 'bg-white border-t-orange-500 border-x-2 border-gw-line text-orange-800 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]' 
+                      : 'bg-gw-line/50 border-t-transparent border-transparent text-gw-muted hover:text-gw-text hover:bg-white/60 mb-0.5'
                   }`}
                 >
-                  <FileX size={16} />
-                  Excluded / Remarks <span className="opacity-60 text-xs ml-1">({classifyRows.remarks.length})</span>
+                  <FileX size={18} className={activeTab === 'remarks' ? 'text-orange-500' : 'text-gw-muted'} />
+                  <span className="uppercase tracking-tight">Excluded / Remarks</span>
+                  <span className={`px-2.5 py-1 rounded-md text-[11px] font-black leading-none ${
+                    activeTab === 'remarks' ? 'bg-orange-500 text-white shadow-sm' : 'bg-gw-line text-gw-text/60'
+                  }`}>
+                    {classifyRows.remarks.length}
+                  </span>
                 </button>
               </div>
 
-              <div className="bg-gw-card border border-gw-line rounded-b-2xl rounded-tr-2xl p-1 shadow-sm relative min-h-[450px]">
+              {/* Main Content Area */}
+              <div className="bg-white border-2 border-gw-line rounded-b-2xl rounded-tr-2xl p-1 shadow-sm relative min-h-[450px] z-20">
                 <div className="absolute top-4 right-4 z-20">
                     <button 
                       onClick={
@@ -209,7 +228,7 @@ function App() {
                         activeTab === 'due' ? handleDownloadDue : 
                         handleDownloadRemarksList
                       }
-                      className="bg-gw-teal/10 hover:bg-gw-teal hover:text-white border border-gw-teal/50 text-gw-teal text-xs font-bold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-2"
+                      className="bg-gw-teal/10 hover:bg-gw-teal hover:text-white border border-gw-teal/50 text-gw-teal text-xs font-black px-4 py-2 rounded-lg transition-colors flex items-center gap-2 uppercase tracking-wide"
                     >
                       <Download size={14} />
                       Download This List
@@ -230,12 +249,12 @@ function App() {
 
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center h-[60vh] text-gw-muted border-2 border-dashed border-gw-line rounded-3xl bg-gw-panel">
-             <div className="w-16 h-16 bg-gw-card rounded-2xl flex items-center justify-center mb-4 text-gw-teal shadow-lg shadow-gw-teal/10">
-               <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></svg>
+          <div className="flex flex-col items-center justify-center h-[60vh] text-gw-muted border-4 border-dashed border-gw-line rounded-3xl bg-gw-panel/50">
+             <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mb-6 text-gw-teal shadow-xl border border-gw-line">
+               <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></svg>
              </div>
-             <p className="font-bold text-lg text-gw-text">No Data Loaded</p>
-             <p className="text-xs opacity-70">Upload an Excel file to see the magic happen</p>
+             <p className="font-black text-2xl text-gw-text mb-2">No Data Loaded</p>
+             <p className="text-sm font-bold opacity-60">Upload an Excel file to see the magic happen</p>
           </div>
         )}
       </main>
