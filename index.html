@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gulf Way | WPS Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              gw: {
+                bg: '#071525',
+                panel: '#0a1d33',
+                card: '#0c2542',
+                line: 'rgba(255,255,255,0.10)',
+                text: '#eaf3ff',
+                muted: '#a7bdd6',
+                teal: '#19c6d4',
+                teal2: '#11a7c0',
+                blue: '#2e7bdc',
+                danger: '#ff5c7a',
+                ok: '#7ef3c7',
+              }
+            },
+            fontFamily: {
+              sans: ['Inter', 'system-ui', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      body { background-color: #071525; color: #eaf3ff; }
+      /* Custom scrollbar for tables */
+      ::-webkit-scrollbar { width: 8px; height: 8px; }
+      ::-webkit-scrollbar-track { background: #0a1d33; }
+      ::-webkit-scrollbar-thumb { background: #0c2542; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); }
+      ::-webkit-scrollbar-thumb:hover { background: #19c6d4; }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "recharts": "https://esm.sh/recharts@^3.6.0",
+    "xlsx": "https://esm.sh/xlsx@^0.18.5"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
