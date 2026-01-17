@@ -14,13 +14,31 @@ const COLORS_AMOUNT = ['#2e7bdc', '#ff5c7a']; // Blue (Paid), Danger (Outstandin
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-gw-panel border border-gw-line p-2 rounded shadow-xl text-xs">
-        <p className="font-bold text-gw-text">{`${payload[0].name}: ${payload[0].value.toLocaleString()}`}</p>
+      <div className="bg-gw-text text-white p-3 rounded-lg shadow-xl text-xs border border-white/10">
+        <p className="font-black mb-1 text-sm">{payload[0].name}</p>
+        <p className="font-mono">{payload[0].value.toLocaleString()}</p>
       </div>
     );
   }
   return null;
 };
+
+interface ChartContainerProps {
+  title: string;
+  children: React.ReactNode;
+  accentColor: string;
+}
+
+const ChartContainer: React.FC<ChartContainerProps> = ({ title, children, accentColor }) => (
+  <div className={`bg-white border border-gw-line rounded-2xl p-0 shadow-sm flex flex-col overflow-hidden border-t-4 ${accentColor}`}>
+     <div className="px-5 py-4 border-b border-gw-line bg-gw-bg/50">
+        <div className="font-black text-sm text-gw-text uppercase tracking-wider">{title}</div>
+     </div>
+     <div className="h-64 w-full mt-4 pr-4">
+       {children}
+     </div>
+  </div>
+);
 
 export const ChartsSection: React.FC<ChartsSectionProps> = ({ paidCount, dueCount, paidAmount, outstandingAmount }) => {
   const dataCount = [
@@ -34,10 +52,8 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({ paidCount, dueCoun
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-      <div className="bg-gw-card border border-gw-line rounded-2xl p-1 shadow-lg flex flex-col">
-        <div className="px-4 py-3 border-b border-gw-line font-black text-sm text-gw-text">Paid vs Need To Pay (Count)</div>
-        <div className="h-64 w-full mt-2">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      <ChartContainer title="Paid vs Need To Pay (Count)" accentColor="border-gw-teal">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
@@ -55,15 +71,12 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({ paidCount, dueCoun
                 ))}
               </Pie>
               <Tooltip content={<CustomTooltip />} />
-              <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '12px', color: '#a7bdd6' }} />
+              <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase' }} />
             </PieChart>
           </ResponsiveContainer>
-        </div>
-      </div>
+      </ChartContainer>
 
-      <div className="bg-gw-card border border-gw-line rounded-2xl p-1 shadow-lg flex flex-col">
-        <div className="px-4 py-3 border-b border-gw-line font-black text-sm text-gw-text">Paid vs Outstanding (Amount)</div>
-        <div className="h-64 w-full mt-2">
+      <ChartContainer title="Paid vs Outstanding (Amount)" accentColor="border-blue-600">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
@@ -81,11 +94,10 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({ paidCount, dueCoun
                 ))}
               </Pie>
               <Tooltip content={<CustomTooltip />} />
-              <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '12px', color: '#a7bdd6' }} />
+              <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase' }} />
             </PieChart>
           </ResponsiveContainer>
-        </div>
-      </div>
+      </ChartContainer>
     </div>
   );
 };

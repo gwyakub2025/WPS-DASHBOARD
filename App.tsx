@@ -5,12 +5,23 @@ import { ChartsSection } from './components/ChartsSection';
 import { RemarksGrid } from './components/RemarksGrid';
 import { PreviewTable } from './components/PreviewTable';
 import { readExcelFile, processSheet, calculateStats, downloadXlsx } from './services/excelService';
-import { ProcessedWorkbook, DashboardData } from './types';
+import { ProcessedWorkbook, DashboardData, REMARK_MASTER, CleanedRow } from './types';
+import { Download, ListChecks, AlertCircle, FileX } from 'lucide-react';
 
 const INITIAL_DATA: DashboardData = {
   rows: [],
   kpis: {
-    total: 0, paidCount: 0, dueCount: 0, paidTotal: 0, contractTotal: 0, outstandingTotal: 0, paidRatioCount: 0, paidRatioAmount: 0
+    total: 0, 
+    paidCount: 0, 
+    dueCount: 0, 
+    paidTotal: 0, 
+    contractTotal: 0, 
+    outstandingTotal: 0, 
+    paidRatioCount: 0, 
+    complianceShortfall: 0,
+    uncoveredCount: 0,
+    eligibleCount: 0,
+    paidComplianceCount: 0
   },
   remarkCounts: {}
 };
@@ -20,6 +31,9 @@ function App() {
   const [currentSheet, setCurrentSheet] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [data, setData] = useState<DashboardData>(INITIAL_DATA);
+  
+  // Tab State
+  const [activeTab, setActiveTab] = useState<'paid' | 'due' | 'remarks'>('paid');
 
   // When sheet changes, re-calculate stats
   useEffect(() => {
@@ -28,13 +42,10 @@ function App() {
       return;
     }
 
-    const rows = processSheet(workbookData.sheets as any, currentSheet); // 'sheets' is actually the raw workbook object in our simplified types, wait.
-    // Correction: In `readExcelFile`, we returned `{ sheetNames, workbook }`.
-    // We should pass the workbook object to processSheet.
-    // Let's adjust the state to hold the raw workbook properly.
-    
-    // Actually, to optimize, we should probably memoize the workbook.
-  }, [currentSheet, workbookData]);
+    const rows = processSheet(workbookData.sheets as any, currentSheet);
+    const stats = calculateStats(rows);
+    setData(stats);
+  }, [workbookData, currentSheet]);
 
 
   const handleFileUpload = async (file: File) => {
@@ -42,13 +53,10 @@ function App() {
       setIsProcessing(true);
       const { sheetNames, workbook } = await readExcelFile(file);
       
-      // Store raw workbook in state (it's not serializable for redux but fine for React state usually, or use a ref. State is fine for this size)
-      // To strictly follow types, let's just store what we need. 
-      // We will store the `XLSX.Workbook` object in a separate ref or state that allows any.
       setWorkbookData({
         fileName: file.name,
         sheetNames,
-        sheets: workbook as any // storing the raw workbook object here for simplicity in this demo
+        sheets: workbook as any 
       });
 
       if (sheetNames.length > 0) {
@@ -62,16 +70,36 @@ function App() {
     }
   };
 
-  // Compute derived data when workbook or sheet changes
-  useEffect(() => {
-    if (workbookData && currentSheet) {
-      const rawWorkbook = workbookData.sheets as any; // Cast back to XLSX.Workbook
-      const cleanedRows = processSheet(rawWorkbook, currentSheet);
-      const stats = calculateStats(cleanedRows);
-      setData(stats);
-    }
-  }, [workbookData, currentSheet]);
+  /**
+   * Classification Helpers matching calculateStats logic
+   */
+  const checkIsPaid = (r: CleanedRow) => {
+    // Rule: Paid >= 80% of Contract
+    const threshold = r.contract * 0.8;
+    return r.contract === 0 ? true : r.paid >= threshold;
+  };
 
+  const checkHasRemark = (r: CleanedRow) => {
+    return !!r.remark && r.remark.trim().length > 0;
+  };
+
+  const classifyRows = useMemo(() => {
+    const paid: CleanedRow[] = [];
+    const remarks: CleanedRow[] = [];
+    const due: CleanedRow[] = [];
+
+    data.rows.forEach(r => {
+      if (checkIsPaid(r)) {
+        paid.push(r);
+      } else if (checkHasRemark(r)) {
+        remarks.push(r);
+      } else {
+        due.push(r);
+      }
+    });
+
+    return { paid, remarks, due };
+  }, [data.rows]);
 
   const handleDownloadFull = () => {
     if (!data.rows.length) return;
@@ -79,17 +107,16 @@ function App() {
   };
 
   const handleDownloadPaid = () => {
-    const paid = data.rows.filter(r => r.paid > 0);
-    downloadXlsx(paid, `PAID_${currentSheet}.xlsx`);
+    downloadXlsx(classifyRows.paid, `PAID_LIST_${currentSheet}.xlsx`);
   };
 
   const handleDownloadDue = () => {
-    const due = data.rows.filter(r => r.outstanding > 0);
-    downloadXlsx(due, `DUE_${currentSheet}.xlsx`);
+    downloadXlsx(classifyRows.due, `NEED_TO_PAY_${currentSheet}.xlsx`);
   };
-
-  const paidRows = useMemo(() => data.rows.filter(r => r.paid > 0), [data.rows]);
-  const dueRows = useMemo(() => data.rows.filter(r => r.outstanding > 0), [data.rows]);
+  
+  const handleDownloadRemarksList = () => {
+    downloadXlsx(classifyRows.remarks, `EXCLUDED_REMARKS_${currentSheet}.xlsx`);
+  };
 
   return (
     <div className="app flex min-h-screen bg-gw-bg text-gw-text font-sans">
@@ -103,11 +130,12 @@ function App() {
         onDownloadFull={handleDownloadFull}
         onDownloadPaid={handleDownloadPaid}
         onDownloadDue={handleDownloadDue}
+        kpis={data.kpis}
       />
 
       <main className="flex-1 p-6 md:p-8 overflow-y-auto h-screen">
         <header className="mb-8">
-          <h1 className="text-2xl font-black text-white mb-1">
+          <h1 className="text-2xl font-black text-gw-text mb-1">
             {workbookData ? `Dashboard: ${currentSheet}` : 'Welcome to WPS Dashboard'}
           </h1>
           <p className="text-gw-muted text-sm">
@@ -118,33 +146,95 @@ function App() {
         </header>
 
         {workbookData ? (
-          <div className="animate-in fade-in duration-500">
+          <div className="animate-in fade-in duration-500 pb-12">
             {/* Row 1: KPIs */}
             <KPIGrid kpis={data.kpis} />
 
             {/* Row 2: Charts */}
             <ChartsSection 
-              paidCount={data.kpis.paidCount}
-              dueCount={data.kpis.dueCount}
+              paidCount={classifyRows.paid.length}
+              dueCount={classifyRows.due.length}
               paidAmount={data.kpis.paidTotal}
               outstandingAmount={data.kpis.outstandingTotal}
             />
 
-            {/* Row 3: Remarks */}
+            {/* Row 3: Remarks Counts */}
             <RemarksGrid rows={data.rows} counts={data.remarkCounts} sheetName={currentSheet} />
 
-            {/* Row 4: Tables */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 pb-12">
-              <PreviewTable title="Paid List (Preview)" rows={paidRows} />
-              <PreviewTable title="Need To Pay List (Preview)" rows={dueRows} />
+            {/* Row 4: Detailed Lists - Tabbed View */}
+            <div className="mt-8">
+              <div className="flex items-center gap-2 mb-0 overflow-x-auto">
+                <button 
+                  onClick={() => setActiveTab('paid')}
+                  className={`flex items-center gap-2 px-6 py-3 rounded-t-xl text-sm font-bold border-t border-x transition-colors ${
+                    activeTab === 'paid' 
+                      ? 'bg-gw-card border-gw-line text-gw-teal' 
+                      : 'bg-transparent border-transparent text-gw-muted hover:text-gw-text hover:bg-gw-panel'
+                  }`}
+                >
+                  <ListChecks size={16} />
+                  Paid List <span className="opacity-60 text-xs ml-1">({classifyRows.paid.length})</span>
+                </button>
+                
+                <button 
+                  onClick={() => setActiveTab('due')}
+                  className={`flex items-center gap-2 px-6 py-3 rounded-t-xl text-sm font-bold border-t border-x transition-colors ${
+                    activeTab === 'due' 
+                      ? 'bg-gw-card border-gw-line text-gw-danger' 
+                      : 'bg-transparent border-transparent text-gw-muted hover:text-gw-text hover:bg-gw-panel'
+                  }`}
+                >
+                  <AlertCircle size={16} />
+                  Need To Pay <span className="opacity-60 text-xs ml-1">({classifyRows.due.length})</span>
+                </button>
+
+                <button 
+                  onClick={() => setActiveTab('remarks')}
+                  className={`flex items-center gap-2 px-6 py-3 rounded-t-xl text-sm font-bold border-t border-x transition-colors ${
+                    activeTab === 'remarks' 
+                      ? 'bg-gw-card border-gw-line text-orange-400' 
+                      : 'bg-transparent border-transparent text-gw-muted hover:text-gw-text hover:bg-gw-panel'
+                  }`}
+                >
+                  <FileX size={16} />
+                  Excluded / Remarks <span className="opacity-60 text-xs ml-1">({classifyRows.remarks.length})</span>
+                </button>
+              </div>
+
+              <div className="bg-gw-card border border-gw-line rounded-b-2xl rounded-tr-2xl p-1 shadow-sm relative min-h-[450px]">
+                <div className="absolute top-4 right-4 z-20">
+                    <button 
+                      onClick={
+                        activeTab === 'paid' ? handleDownloadPaid :
+                        activeTab === 'due' ? handleDownloadDue : 
+                        handleDownloadRemarksList
+                      }
+                      className="bg-gw-teal/10 hover:bg-gw-teal hover:text-white border border-gw-teal/50 text-gw-teal text-xs font-bold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-2"
+                    >
+                      <Download size={14} />
+                      Download This List
+                    </button>
+                  </div>
+                
+                {activeTab === 'paid' && (
+                  <PreviewTable title="Paid List (>= 80% Contract)" rows={classifyRows.paid} />
+                )}
+                {activeTab === 'due' && (
+                  <PreviewTable title="Need To Pay List (WPS Eligible)" rows={classifyRows.due} />
+                )}
+                {activeTab === 'remarks' && (
+                  <PreviewTable title="Excluded / Remarks List (Not Paid & Has Remark)" rows={classifyRows.remarks} />
+                )}
+              </div>
             </div>
+
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center h-[60vh] text-gw-muted border-2 border-dashed border-gw-line rounded-3xl bg-gw-panel/20">
+          <div className="flex flex-col items-center justify-center h-[60vh] text-gw-muted border-2 border-dashed border-gw-line rounded-3xl bg-gw-panel">
              <div className="w-16 h-16 bg-gw-card rounded-2xl flex items-center justify-center mb-4 text-gw-teal shadow-lg shadow-gw-teal/10">
                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></svg>
              </div>
-             <p className="font-bold text-lg">No Data Loaded</p>
+             <p className="font-bold text-lg text-gw-text">No Data Loaded</p>
              <p className="text-xs opacity-70">Upload an Excel file to see the magic happen</p>
           </div>
         )}

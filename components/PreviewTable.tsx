@@ -8,43 +8,46 @@ interface PreviewTableProps {
 
 export const PreviewTable: React.FC<PreviewTableProps> = ({ title, rows }) => {
   return (
-    <div className="bg-gw-card border border-gw-line rounded-2xl overflow-hidden shadow-lg flex flex-col h-[400px]">
-      <div className="px-4 py-3 border-b border-gw-line font-black text-sm text-gw-text bg-gw-card z-10 sticky top-0 flex justify-between items-center">
-        <span>{title}</span>
-        <span className="text-xs font-normal text-gw-muted bg-gw-panel px-2 py-1 rounded-md">{rows.length} rows</span>
+    <div className="bg-white border-2 border-gw-line rounded-2xl overflow-hidden shadow-md flex flex-col h-[450px]">
+      <div className="px-5 py-4 border-b-2 border-gw-line bg-white z-10 sticky top-0 flex justify-between items-center">
+        <span className="font-black text-sm text-gw-text uppercase tracking-wide border-l-4 border-gw-teal pl-3">{title}</span>
+        <span className="text-xs font-bold text-white bg-gw-text px-3 py-1.5 rounded-full shadow-sm">{rows.length} rows</span>
       </div>
       <div className="overflow-auto flex-1">
         <table className="w-full text-left border-collapse">
-          <thead className="bg-gw-panel sticky top-0 z-0 text-xs uppercase text-gw-muted">
+          {/* Dark Header for "Radiant" / Effective look */}
+          <thead className="bg-gw-text sticky top-0 z-0 shadow-lg">
             <tr>
-              <th className="p-3 font-semibold border-b border-gw-line whitespace-nowrap">SNO</th>
-              <th className="p-3 font-semibold border-b border-gw-line whitespace-nowrap">Name</th>
-              <th className="p-3 font-semibold border-b border-gw-line whitespace-nowrap">Code</th>
-              <th className="p-3 font-semibold border-b border-gw-line whitespace-nowrap text-right">Paid</th>
-              <th className="p-3 font-semibold border-b border-gw-line whitespace-nowrap text-right">Contract</th>
-              <th className="p-3 font-semibold border-b border-gw-line whitespace-nowrap">Remark</th>
+              <th className="p-4 text-xs font-black uppercase tracking-wider text-white whitespace-nowrap w-20 border-r border-white/10">SNO</th>
+              <th className="p-4 text-xs font-black uppercase tracking-wider text-white whitespace-nowrap border-r border-white/10">Name</th>
+              <th className="p-4 text-xs font-black uppercase tracking-wider text-white whitespace-nowrap border-r border-white/10">Code</th>
+              <th className="p-4 text-xs font-black uppercase tracking-wider text-white whitespace-nowrap text-right border-r border-white/10">Paid</th>
+              <th className="p-4 text-xs font-black uppercase tracking-wider text-white whitespace-nowrap text-right border-r border-white/10">Contract</th>
+              <th className="p-4 text-xs font-black uppercase tracking-wider text-white whitespace-nowrap">Remark</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gw-line text-xs text-gw-text">
+          <tbody className="divide-y divide-gw-line text-xs text-gw-text font-bold">
             {rows.length === 0 ? (
                <tr>
                  <td colSpan={6} className="p-8 text-center text-gw-muted italic">No records found.</td>
                </tr>
             ) : (
               rows.slice(0, 100).map((r, i) => (
-                <tr key={i} className="hover:bg-white/5 transition-colors">
-                  <td className="p-3">{r.sno}</td>
+                <tr key={i} className="hover:bg-gw-panel transition-colors even:bg-slate-50">
+                  <td className="p-3 pl-4 text-gw-muted font-mono">{r.sno}</td>
                   <td className="p-3 max-w-[150px] truncate" title={r.name}>{r.name}</td>
-                  <td className="p-3 font-mono text-gw-muted">{r.code}</td>
-                  <td className="p-3 text-right font-medium text-gw-ok">{r.paid > 0 ? r.paid.toLocaleString() : '-'}</td>
-                  <td className="p-3 text-right font-medium">{r.contract > 0 ? r.contract.toLocaleString() : '-'}</td>
-                  <td className="p-3 max-w-[200px] truncate text-gw-muted" title={r.remark}>{r.remark}</td>
+                  <td className="p-3 font-mono text-gw-teal2">{r.code}</td>
+                  <td className={`p-3 text-right ${r.paid > 0 ? 'text-gw-ok' : 'text-gw-muted'}`}>
+                    {r.paid > 0 ? r.paid.toLocaleString() : '-'}
+                  </td>
+                  <td className="p-3 text-right">{r.contract > 0 ? r.contract.toLocaleString() : '-'}</td>
+                  <td className="p-3 max-w-[200px] truncate text-gw-text/80" title={r.remark}>{r.remark}</td>
                 </tr>
               ))
             )}
             {rows.length > 100 && (
               <tr>
-                <td colSpan={6} className="p-3 text-center text-gw-muted text-xs bg-gw-panel/50">
+                <td colSpan={6} className="p-4 text-center text-gw-text font-black text-xs bg-gw-panel border-t border-gw-line">
                   ... {rows.length - 100} more rows hidden in preview ...
                 </td>
               </tr>

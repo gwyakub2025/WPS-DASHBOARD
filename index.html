@@ -11,17 +11,17 @@
           extend: {
             colors: {
               gw: {
-                bg: '#071525',
-                panel: '#0a1d33',
-                card: '#0c2542',
-                line: 'rgba(255,255,255,0.10)',
-                text: '#eaf3ff',
-                muted: '#a7bdd6',
-                teal: '#19c6d4',
-                teal2: '#11a7c0',
-                blue: '#2e7bdc',
-                danger: '#ff5c7a',
-                ok: '#7ef3c7',
+                bg: '#f8fafc',      // Slate 50: Main application background
+                panel: '#f1f5f9',   // Slate 100: Secondary backgrounds (headers, hover states)
+                card: '#ffffff',    // White: Cards and containers
+                line: '#e2e8f0',    // Slate 200: Borders
+                text: '#0f172a',    // Slate 900: Primary text
+                muted: '#64748b',   // Slate 500: Secondary/muted text
+                teal: '#0d9488',    // Teal 600: Accents
+                teal2: '#115e59',   // Teal 800: Darker accent
+                blue: '#2563eb',    // Blue 600: Links/Actions
+                danger: '#dc2626',  // Red 600: Errors/Due
+                ok: '#059669',      // Emerald 600: Success/Paid
               }
             },
             fontFamily: {
@@ -32,12 +32,12 @@
       }
     </script>
     <style>
-      body { background-color: #071525; color: #eaf3ff; }
+      body { background-color: #f8fafc; color: #0f172a; }
       /* Custom scrollbar for tables */
       ::-webkit-scrollbar { width: 8px; height: 8px; }
-      ::-webkit-scrollbar-track { background: #0a1d33; }
-      ::-webkit-scrollbar-thumb { background: #0c2542; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); }
-      ::-webkit-scrollbar-thumb:hover { background: #19c6d4; }
+      ::-webkit-scrollbar-track { background: #f1f5f9; }
+      ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; border: 1px solid #ffffff; }
+      ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
   <script type="importmap">
 {

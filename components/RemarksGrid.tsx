@@ -15,16 +15,6 @@ export const RemarksGrid: React.FC<RemarksGridProps> = ({ rows, counts, sheetNam
     // Re-filter specifically for this remark (mimicking the matching logic)
     const filtered = rows.filter(r => {
       const isOther = remarkKey === OTHER_REMARK_KEY;
-      // We rely on the exact string match from the processed count logic 
-      // but simpler here: we need to match the key logic from service.
-      // Ideally, the rows would have a `remarkKey` property attached, 
-      // but filtering by string text again is safe if logic is consistent.
-      
-      // Let's use a simpler heuristic: filter by the normalized remark mapping
-      // But since we don't have the matcher here, we can just pre-process or
-      // re-implement the matcher. 
-      // Ideally, we'd pass a downloader function from parent, but let's implement basic matching here.
-      
       const rText = r.remark.toLowerCase().trim();
       if (isOther) {
          // Check if it matches any master
@@ -38,45 +28,62 @@ export const RemarksGrid: React.FC<RemarksGridProps> = ({ rows, counts, sheetNam
     downloadXlsx(filtered, `REMARK_${remarkKey.substring(0,20).replace(/\W/g,'_')}_${sheetName}.xlsx`);
   };
 
-  const Card: React.FC<{ label: string, count: number, isOther?: boolean }> = ({ label, count, isOther }) => (
-    <div className={`
-      relative group p-4 rounded-xl border border-gw-line flex flex-col justify-between min-h-[140px] transition-all
-      ${isOther ? 'bg-gw-panel/50' : 'bg-gw-panel/30'}
-      hover:border-gw-teal/50 hover:bg-gw-panel
-    `}>
-      <div>
-        <div className="text-xs text-gw-muted font-medium mb-2 min-h-[32px] line-clamp-2" title={label}>
-          {label}
+  const Card: React.FC<{ label: string, count: number, isOther?: boolean, idx: number }> = ({ label, count, isOther, idx }) => {
+    // Generate a consistent color based on index for the border/highlight
+    const colors = [
+      'border-blue-500', 'border-purple-500', 'border-pink-500', 'border-indigo-500', 'border-cyan-500', 
+      'border-teal-500', 'border-emerald-500', 'border-lime-500', 'border-amber-500', 'border-orange-500'
+    ];
+    const accentColor = isOther ? 'border-gray-600' : colors[idx % colors.length];
+
+    return (
+      <div className={`
+        relative group p-4 rounded-xl border-2 flex flex-col justify-between min-h-[160px] transition-all duration-200
+        bg-white hover:border-gw-text hover:shadow-xl hover:-translate-y-1
+        ${isOther ? 'border-gw-line bg-gw-bg' : 'border-gw-line'}
+      `}>
+        <div>
+          {/* Embossed / Highlighted Label */}
+          <div className={`
+            text-[10px] font-black text-gw-text mb-3 min-h-[40px] line-clamp-2 uppercase tracking-tight leading-4
+            bg-gw-panel rounded-md px-2 py-2 shadow-sm border-l-4 ${accentColor}
+          `} title={label}>
+            {label}
+          </div>
+          
+          <div className="text-4xl font-black text-gw-text pl-1">
+            {count}
+          </div>
         </div>
-        <div className="text-2xl font-black text-gw-text group-hover:text-gw-teal transition-colors">
-          {count}
-        </div>
+        <button 
+          onClick={() => handleDownload(label)}
+          disabled={count === 0}
+          className={`
+            mt-4 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-[10px] font-black w-full border-2
+            transition-colors uppercase tracking-wide
+            ${count === 0 
+              ? 'opacity-40 cursor-not-allowed text-gw-muted border-transparent bg-gw-bg' 
+              : 'hover:bg-gw-text hover:text-white hover:border-gw-text text-gw-text border-gw-line cursor-pointer bg-white shadow-sm'}
+          `}
+        >
+          <Download size={12} />
+          XLSX
+        </button>
       </div>
-      <button 
-        onClick={() => handleDownload(label)}
-        disabled={count === 0}
-        className={`
-          mt-3 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-bold w-full border border-gw-line
-          transition-colors
-          ${count === 0 
-            ? 'opacity-50 cursor-not-allowed text-gw-muted' 
-            : 'hover:bg-gw-teal hover:text-gw-bg hover:border-gw-teal text-gw-text cursor-pointer'}
-        `}
-      >
-        <Download size={14} />
-        Download XLSX
-      </button>
-    </div>
-  );
+    );
+  };
 
   return (
-    <div className="bg-gw-card border border-gw-line rounded-2xl p-4 shadow-lg mb-6">
-      <div className="font-black text-sm text-gw-text mb-4 pb-2 border-b border-gw-line">Remarks Breakdown</div>
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
-        {REMARK_MASTER.map(label => (
-          <Card key={label} label={label} count={counts[label] || 0} isOther={false} />
+    <div className="bg-white border border-gw-line rounded-2xl p-6 shadow-sm mb-8">
+      <div className="flex items-center gap-2 mb-6 pb-2 border-b-2 border-gw-line">
+         <div className="h-6 w-1.5 bg-gw-teal rounded-full"></div>
+         <div className="font-black text-sm text-gw-text uppercase tracking-wide">Remarks Breakdown</div>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        {REMARK_MASTER.map((label, i) => (
+          <Card key={label} label={label} count={counts[label] || 0} isOther={false} idx={i} />
         ))}
-        <Card label={OTHER_REMARK_KEY} count={counts[OTHER_REMARK_KEY] || 0} isOther={true} />
+        <Card label={OTHER_REMARK_KEY} count={counts[OTHER_REMARK_KEY] || 0} isOther={true} idx={99} />
       </div>
     </div>
   );
