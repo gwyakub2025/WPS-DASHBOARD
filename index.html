@@ -68,6 +68,7 @@
   }
 }
 </script>
+<link rel="stylesheet" href="/index.css">
 </head>
 <body>
   <div id="root"></div>
@@ -136,7 +137,7 @@
 
       const hasData = kpis && kpis.total > 0;
       const ratio = hasData ? Math.round(kpis.paidRatioCount * 100) : 0;
-      const isBlocked = ratio < 80;
+      const isBlocked = ratio < 85;
 
       return (
         <aside className="w-[380px] flex-shrink-0 bg-white border-r border-gw-line flex flex-col h-screen sticky top-0 shadow-2xl z-20 overflow-y-auto">
@@ -193,7 +194,7 @@
             <div className="px-5 mt-4 mb-6 animate-in">
                <div className="bg-gradient-to-br from-white to-gw-bg border-2 border-gw-line rounded-xl p-5 shadow-lg relative overflow-hidden group hover:border-gw-text transition-all">
                   <div className="mb-4">
-                    <div className="bg-gw-text text-white px-3 py-1.5 rounded-md text-[10px] font-black uppercase tracking-wider shadow-md inline-flex items-center gap-2 border border-gw-text">REQUIRED COUNT FOR 80% <i data-lucide="info" className="w-3 h-3 text-gw-teal"></i></div>
+                    <div className="bg-gw-text text-white px-3 py-1.5 rounded-md text-[10px] font-black uppercase tracking-wider shadow-md inline-flex items-center gap-2 border border-gw-text">REQUIRED COUNT FOR 85% <i data-lucide="info" className="w-3 h-3 text-gw-teal"></i></div>
                   </div>
                   <div className="flex items-baseline gap-1">
                     <div className="text-6xl font-black text-gw-text tracking-tighter drop-shadow-sm">{kpis.complianceShortfall}</div>
@@ -460,7 +461,7 @@
 
         rows.forEach(r => {
           pTotal += r.paid; cTotal += r.contract;
-          const isPaid = r.contract === 0 ? true : r.paid >= (r.contract * 0.8);
+          const isPaid = r.contract === 0 ? true : r.paid >= (r.contract * 0.85);
           const hasRem = !!r.remark && r.remark.length > 0;
           if (isPaid) { pCount++; if (!hasRem) pNoRemark++; }
           else {
@@ -473,7 +474,7 @@
         });
 
         const denom = pNoRemark + dCount;
-        const shortfall = Math.max(0, Math.ceil(denom * 0.8) - pNoRemark);
+        const shortfall = Math.max(0, Math.ceil(denom * 0.85) - pNoRemark);
 
         setData({
           rows,
@@ -489,7 +490,7 @@
       const classifyRows = useMemo(() => {
         const paid = [], remarks = [], due = [];
         data.rows.forEach(r => {
-          const isPaid = r.contract === 0 ? true : r.paid >= (r.contract * 0.8);
+          const isPaid = r.contract === 0 ? true : r.paid >= (r.contract * 0.85);
           if (isPaid) paid.push(r);
           else if (r.remark) remarks.push(r);
           else due.push(r);
@@ -556,5 +557,6 @@
     const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<App />);
   </script>
+<script type="module" src="/index.tsx"></script>
 </body>
 </html>

@@ -46,7 +46,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const hasData = kpis && kpis.total > 0;
   const ratio = hasData ? Math.round(kpis.paidRatioCount * 100) : 0;
-  const isBlocked = ratio < 80;
+  const isBlocked = ratio < 85;
 
   return (
     <aside className="w-[380px] flex-shrink-0 bg-white border-r border-gw-line flex flex-col h-screen sticky top-0 shadow-2xl z-20 overflow-y-auto">
@@ -146,14 +146,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       )}
 
-      {/* 4. Required For 80% Card */}
+      {/* 4. Required For 85% Card */}
       {hasData && (
         <div className="px-5 mt-4 mb-6 animate-in slide-in-from-left-4 duration-500 delay-200">
            <div className="bg-gradient-to-br from-white to-gw-bg border-2 border-gw-line rounded-xl p-5 shadow-lg hover:shadow-xl transition-all relative overflow-hidden group hover:border-gw-text">
               
               <div className="mb-4">
                 <div className="bg-gw-text text-white px-3 py-1.5 rounded-md text-[10px] font-black uppercase tracking-wider shadow-md inline-flex items-center gap-2">
-                   REQUIRED COUNT FOR 80%
+                   REQUIRED COUNT FOR 85%
                    <Info size={12} className="text-gw-teal"/>
                 </div>
               </div>

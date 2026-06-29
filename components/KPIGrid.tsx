@@ -60,7 +60,7 @@ export const KPIGrid: React.FC<KPIGridProps> = ({ kpis }) => {
       <KPICard 
         label="Paid Count" 
         value={kpis.paidCount} 
-        tooltip="Number of employees where Paid Amount is at least 80% of Contract Value."
+        tooltip="Number of employees where Paid Amount is at least 85% of Contract Value."
         accentColor="border-gw-ok"
       />
       <KPICard 
@@ -72,7 +72,7 @@ export const KPIGrid: React.FC<KPIGridProps> = ({ kpis }) => {
       <KPICard 
         label="Paid Ratio" 
         value={formatPct(kpis.paidRatioCount)} 
-        tooltip="Formula: Paid (>80%) without remarks / (Total Employees - Remarks)"
+        tooltip="Formula: Paid (>=85%) without remarks / (Total Employees - Remarks)"
         accentColor="border-yellow-500"
       />
 
@@ -100,7 +100,7 @@ export const KPIGrid: React.FC<KPIGridProps> = ({ kpis }) => {
       <KPICard 
         label="Shortfall (Count)" 
         value={kpis.complianceShortfall} 
-        tooltip="Number of employees you MUST pay to reach 80% compliance."
+        tooltip="Number of employees you MUST pay to reach 85% compliance."
         accentColor="border-gw-text"
       />
     </div>

@@ -74,8 +74,8 @@ function App() {
    * Classification Helpers matching calculateStats logic
    */
   const checkIsPaid = (r: CleanedRow) => {
-    // Rule: Paid >= 80% of Contract
-    const threshold = r.contract * 0.8;
+    // Rule: Paid >= 85% of Contract
+    const threshold = r.contract * 0.85;
     return r.contract === 0 ? true : r.paid >= threshold;
   };
 
@@ -236,7 +236,7 @@ function App() {
                   </div>
                 
                 {activeTab === 'paid' && (
-                  <PreviewTable title="Paid List (>= 80% Contract)" rows={classifyRows.paid} />
+                  <PreviewTable title="Paid List (>= 85% Contract)" rows={classifyRows.paid} />
                 )}
                 {activeTab === 'due' && (
                   <PreviewTable title="Need To Pay List (WPS Eligible)" rows={classifyRows.due} />

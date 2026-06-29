@@ -265,7 +265,7 @@ export const processSheet = (workbook: XLSX.WorkBook, sheetName: string): Cleane
 
 export const calculateStats = (rows: CleanedRow[]): DashboardData => {
   let paidCount = 0;
-  let paidNoRemarkCount = 0; // Numerator: Paid > 80% AND No Remark
+  let paidNoRemarkCount = 0; // Numerator: Paid >= 85% AND No Remark
   let dueCount = 0;
   let paidTotal = 0;
   let contractTotal = 0;
@@ -279,8 +279,8 @@ export const calculateStats = (rows: CleanedRow[]): DashboardData => {
     paidTotal += r.paid;
     contractTotal += r.contract; 
 
-    // Logic: Paid >= 80% of Contract
-    const threshold = r.contract * 0.8;
+    // Logic: Paid >= 85% of Contract
+    const threshold = r.contract * 0.85;
     const isPaid = r.contract === 0 ? true : r.paid >= threshold;
     const hasRemark = !!r.remark && r.remark.trim().length > 0;
 
@@ -302,16 +302,16 @@ export const calculateStats = (rows: CleanedRow[]): DashboardData => {
     }
   });
 
-  // Numerator: Paid > 80% & Without Remarks
+  // Numerator: Paid >= 85% & Without Remarks
   // Denominator: Total Employees - All Employees With Remarks
   // Note: (Total - All Remarks) is mathematically equal to (PaidNoRemark + DueCount)
   const denominator = paidNoRemarkCount + dueCount;
 
-  // Calculate Shortfall to 80%
-  // We need (Paid / Denom) >= 0.8
-  // So Paid >= 0.8 * Denom
-  const target80 = Math.ceil(denominator * 0.8);
-  const shortfall = Math.max(0, target80 - paidNoRemarkCount);
+  // Calculate Shortfall to 85%
+  // We need (Paid / Denom) >= 0.85
+  // So Paid >= 0.85 * Denom
+  const target85 = Math.ceil(denominator * 0.85);
+  const shortfall = Math.max(0, target85 - paidNoRemarkCount);
 
   // New Summary Fields
   // Uncovered = Total Employees - Covered (Denominator)
