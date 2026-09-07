@@ -2,5 +2,7 @@
   "name": "Gulf Way WPS Dashboard",
   "description": "A comprehensive dashboard for processing WPS payment sheets, cleaning data, visualizing KPIs, and generating reports.",
   "requestFramePermissions": [],
-  "majorCapabilities": []
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

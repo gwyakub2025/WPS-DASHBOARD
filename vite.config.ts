@@ -18,6 +18,19 @@ export default defineConfig(({ mode }) => {
         alias: {
           '@': path.resolve(__dirname, '.'),
         }
+      },
+      build: {
+        chunkSizeWarningLimit: 1500,
+        rollupOptions: {
+          output: {
+            manualChunks: {
+              'vendor-xlsx': ['xlsx'],
+              'vendor-recharts': ['recharts'],
+              'vendor-react': ['react', 'react-dom'],
+              'vendor-icons': ['lucide-react']
+            }
+          }
+        }
       }
     };
 });
