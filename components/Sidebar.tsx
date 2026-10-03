@@ -1,5 +1,5 @@
 import React from 'react';
-import { UploadCloud, FileSpreadsheet, Download, RefreshCw, Settings, Info } from 'lucide-react';
+import { UploadCloud, FileSpreadsheet, Download, RefreshCw, Settings, Info, KeyRound, CheckCircle2 } from 'lucide-react';
 import { DashboardData } from '../types';
 
 interface SidebarProps {
@@ -12,7 +12,13 @@ interface SidebarProps {
   onDownloadPaid: () => void;
   onDownloadDue: () => void;
   fileName: string | null;
-  kpis?: DashboardData['kpis']; // Add KPIs to sidebar props
+  kpis?: DashboardData['kpis'];
+  // Master File Props
+  masterFileName?: string | null;
+  masterRecordCount?: number;
+  onMasterFileUpload?: (file: File) => void;
+  isProcessingMaster?: boolean;
+  onDownloadRMS?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -25,14 +31,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onDownloadPaid,
   onDownloadDue,
   fileName,
-  kpis
+  kpis,
+  masterFileName,
+  masterRecordCount = 0,
+  onMasterFileUpload,
+  isProcessingMaster = false,
+  onDownloadRMS
 }) => {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const masterFileInputRef = React.useRef<HTMLInputElement>(null);
   const [showControls, setShowControls] = React.useState(true);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       onFileUpload(e.target.files[0]);
+    }
+  };
+
+  const handleMasterFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0] && onMasterFileUpload) {
+      onMasterFileUpload(e.target.files[0]);
     }
   };
 
@@ -68,6 +86,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
            <div className="flex items-center gap-2 mt-3 p-2 bg-white rounded border border-gw-line text-[10px] text-gw-teal2 font-bold uppercase tracking-wider shadow-sm">
              <FileSpreadsheet size={14} className="text-gw-teal" />
              <span className="truncate max-w-[260px]">{fileName}</span>
+           </div>
+        )}
+
+        {masterFileName && (
+           <div className="flex items-center gap-2 mt-2 p-2 bg-purple-50 rounded border border-purple-200 text-[10px] text-purple-900 font-bold uppercase tracking-wider shadow-2xs">
+             <KeyRound size={13} className="text-purple-600 shrink-0" />
+             <span className="truncate max-w-[200px]" title={masterFileName}>{masterFileName}</span>
+             <span className="ml-auto bg-purple-200/80 px-1.5 py-0.5 rounded text-[9px] font-mono shrink-0">
+               {masterRecordCount} riders
+             </span>
            </div>
         )}
       </div>
@@ -189,7 +217,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {showControls && (
           <div className="animate-in slide-in-from-bottom-2 duration-300">
-            {/* Upload */}
+            {/* WPS File Upload */}
             <div className="bg-white border-2 border-gw-line rounded-xl p-3 shadow-sm mb-3 hover:border-gw-text transition-colors">
               <input 
                 type="file" 
@@ -201,14 +229,45 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button 
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isProcessing}
-                className="w-full bg-gw-text hover:bg-black text-white font-black py-3 px-4 rounded-lg transition-all shadow-md flex items-center justify-center gap-2 text-xs uppercase tracking-wide"
+                className="w-full bg-gw-text hover:bg-black text-white font-black py-3 px-4 rounded-lg transition-all shadow-md flex items-center justify-center gap-2 text-xs uppercase tracking-wide cursor-pointer"
               >
                 {isProcessing ? <RefreshCw className="animate-spin" size={14} /> : <UploadCloud size={14} />}
-                {hasData ? 'Upload New File' : 'Upload XLSX File'}
+                {hasData ? 'Upload New WPS File' : 'Upload WPS XLSX'}
               </button>
             </div>
 
-            {/* Sheet Select */}
+            {/* Master File Upload (for RMS ID lookup) */}
+            <div className="bg-white border-2 border-purple-200 rounded-xl p-3 shadow-sm mb-3 hover:border-purple-500 transition-colors">
+              <input 
+                type="file" 
+                accept=".xlsx,.xls" 
+                ref={masterFileInputRef}
+                onChange={handleMasterFileChange}
+                className="hidden"
+              />
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-black uppercase tracking-wider text-purple-900 flex items-center gap-1.5">
+                  <KeyRound size={12} className="text-purple-600" />
+                  Master Fleet Data
+                </span>
+                {masterFileName && (
+                  <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                    <CheckCircle2 size={10} />
+                    Active
+                  </span>
+                )}
+              </div>
+              <button 
+                onClick={() => masterFileInputRef.current?.click()}
+                disabled={isProcessingMaster}
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white font-black py-2.5 px-3 rounded-lg transition-all shadow-sm flex items-center justify-center gap-2 text-[11px] uppercase tracking-wide cursor-pointer"
+              >
+                {isProcessingMaster ? <RefreshCw className="animate-spin" size={13} /> : <UploadCloud size={13} />}
+                {masterFileName ? 'Replace Master File' : 'Attach Master File (RMS)'}
+              </button>
+            </div>
+
+            {/* Sheet Select & Full Export */}
             <div className="bg-white border-2 border-gw-line rounded-xl p-3 shadow-sm mb-3 hover:border-gw-text transition-colors">
               <select 
                 value={currentSheet}
@@ -222,19 +281,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
                <button
                 onClick={onDownloadFull}
                 disabled={!currentSheet}
-                className="w-full border-2 border-gw-line hover:bg-gw-bg text-gw-text hover:text-gw-teal hover:border-gw-teal py-2 rounded-lg text-[10px] font-black transition-all flex items-center justify-center gap-2 uppercase tracking-wide"
+                className="w-full border-2 border-gw-line hover:bg-gw-bg text-gw-text hover:text-gw-teal hover:border-gw-teal py-2 rounded-lg text-[10px] font-black transition-all flex items-center justify-center gap-2 uppercase tracking-wide cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Download size={12} />
-                Download Full Cleaned
+                Download Full (With Status)
               </button>
             </div>
 
-            {/* Quick Exports */}
+            {/* Quick Exports Grid */}
              <div className="grid grid-cols-2 gap-2">
                 <button 
                   onClick={onDownloadPaid}
                   disabled={!currentSheet}
-                  className="bg-white border-2 border-gw-line hover:bg-gw-text hover:text-white text-gw-text py-2 rounded-xl text-[10px] font-black transition-all flex flex-col items-center gap-1 uppercase tracking-tight shadow-sm"
+                  className="bg-white border-2 border-gw-line hover:bg-gw-text hover:text-white text-gw-text py-2 rounded-xl text-[10px] font-black transition-all flex flex-col items-center gap-1 uppercase tracking-tight shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Download size={14} />
                   Paid List
@@ -242,12 +301,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <button 
                   onClick={onDownloadDue}
                   disabled={!currentSheet}
-                  className="bg-white border-2 border-gw-line hover:bg-gw-danger hover:text-white text-gw-text py-2 rounded-xl text-[10px] font-black transition-all flex flex-col items-center gap-1 uppercase tracking-tight shadow-sm"
+                  className="bg-white border-2 border-gw-line hover:bg-gw-danger hover:text-white text-gw-text py-2 rounded-xl text-[10px] font-black transition-all flex flex-col items-center gap-1 uppercase tracking-tight shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Download size={14} />
                   Need To Pay
                 </button>
               </div>
+
+              {onDownloadRMS && (
+                <button
+                  onClick={onDownloadRMS}
+                  disabled={!currentSheet}
+                  className="w-full mt-2 bg-white border-2 border-purple-300 hover:bg-purple-600 hover:text-white text-purple-900 py-2 rounded-xl text-[10px] font-black transition-all flex items-center justify-center gap-2 uppercase tracking-tight shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <KeyRound size={13} />
+                  Export RMS Mapped Sheet
+                </button>
+              )}
           </div>
         )}
       </div>

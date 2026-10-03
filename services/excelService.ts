@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import { CleanedRow, DashboardData, REMARK_MAP, REMARK_MASTER, OTHER_REMARK_KEY } from '../types';
+import { CleanedRow, DashboardData, REMARK_MAP, REMARK_MASTER, OTHER_REMARK_KEY, MasterRecord, MasterDataset, CleanedRowWithRMS } from '../types';
 
 /**
  * Normalizes a cell value to a string or returns empty string.
@@ -338,14 +338,213 @@ export const calculateStats = (rows: CleanedRow[]): DashboardData => {
   };
 };
 
-export const downloadXlsx = (data: CleanedRow[], fileName: string) => {
-  const headers = ["SNO", "Person Name", "Person Code", "Paid", "Contract", "Remark", "Outstanding"];
+export const downloadXlsx = (data: CleanedRow[], fileName: string, includeStatus = false) => {
+  const hasStatus = includeStatus || data.some(r => !!r.status);
+  const headers = hasStatus
+    ? ["SNO", "Person Name", "Person Code", "Status", "Paid", "Contract", "Remark", "Outstanding"]
+    : ["SNO", "Person Name", "Person Code", "Paid", "Contract", "Remark", "Outstanding"];
   const wsData = [
     headers,
-    ...data.map(r => [r.sno, r.name, r.code, r.paid, r.contract, r.remark, r.outstanding])
+    ...data.map(r => hasStatus
+      ? [r.sno, r.name, r.code, r.status || '', r.paid, r.contract, r.remark, r.outstanding]
+      : [r.sno, r.name, r.code, r.paid, r.contract, r.remark, r.outstanding]
+    )
   ];
   const ws = XLSX.utils.aoa_to_sheet(wsData);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+  XLSX.writeFile(wb, fileName);
+};
+
+/**
+ * Normalizes code values for robust key lookup.
+ */
+const normalizeLookupCode = (val: any): string => {
+  if (val === null || val === undefined) return '';
+  const s = String(val).trim();
+  const digits = s.replace(/\D/g, '');
+  return digits || s;
+};
+
+/**
+ * Reads and parses the Master Excel file containing RMS IDs and Person Codes.
+ */
+export const readMasterExcelFile = async (file: File): Promise<MasterDataset> => {
+  const data = await file.arrayBuffer();
+  const workbook = XLSX.read(data);
+  const sheetName = workbook.SheetNames[0];
+  const sheet = workbook.Sheets[sheetName];
+  if (!sheet) {
+    return { fileName: file.name, totalRecords: 0, byPersonCode: {}, byName: {}, records: [] };
+  }
+
+  // Convert to array of arrays
+  const rows = XLSX.utils.sheet_to_json<any[]>(sheet, { header: 1, defval: null });
+  if (!rows || rows.length === 0) {
+    return { fileName: file.name, totalRecords: 0, byPersonCode: {}, byName: {}, records: [] };
+  }
+
+  // Detect header row by scanning first 10 rows
+  let headerRowIndex = 0;
+  const colMap: Record<string, number> = {};
+
+  for (let r = 0; r < Math.min(rows.length, 10); r++) {
+    const candidateRow = rows[r] || [];
+    const tempMap: Record<string, number> = {};
+    let foundRms = false;
+    let foundPersonOrName = false;
+
+    candidateRow.forEach((cellVal: any, colIdx: number) => {
+      if (cellVal === null || cellVal === undefined) return;
+      const str = String(cellVal).trim().toUpperCase();
+      if (!str) return;
+
+      if (/RMS\s*ID|RMS_ID|^RMS$/i.test(str)) {
+        tempMap['rmsId'] = colIdx;
+        foundRms = true;
+      } else if (/PERSON\s*(NUMB|NUMBER|CODE|NO|NUM|ID)?|^CODE$/i.test(str)) {
+        tempMap['personCode'] = colIdx;
+        foundPersonOrName = true;
+      } else if (/RIDER\s*NAME|EMPLOYEE\s*NAME|^NAME$/i.test(str)) {
+        tempMap['riderName'] = colIdx;
+        foundPersonOrName = true;
+      } else if (/LABOUR\s*CARD\s*(NUM|NO|NUMB|NUMBER)?/i.test(str)) {
+        tempMap['labourCardNum'] = colIdx;
+      } else if (/EID\s*(NUM|NUMBER|NO)?/i.test(str)) {
+        tempMap['eidNumber'] = colIdx;
+      } else if (/PROJECT/i.test(str)) {
+        tempMap['project'] = colIdx;
+      } else if (/RIDER\s*STATUS|STATUS/i.test(str) && tempMap['riderStatus'] === undefined) {
+        tempMap['riderStatus'] = colIdx;
+      } else if (/MOBILE|PHONE/i.test(str)) {
+        tempMap['mobile'] = colIdx;
+      } else if (/EMAIL/i.test(str)) {
+        tempMap['email'] = colIdx;
+      } else if (/COMPANY/i.test(str)) {
+        tempMap['company'] = colIdx;
+      } else if (/PASSPORT/i.test(str)) {
+        tempMap['passportNo'] = colIdx;
+      } else if (/NATIONALIT/i.test(str)) {
+        tempMap['nationality'] = colIdx;
+      }
+    });
+
+    if (foundRms || (tempMap['rmsId'] !== undefined && foundPersonOrName)) {
+      headerRowIndex = r;
+      Object.assign(colMap, tempMap);
+      break;
+    }
+  }
+
+  // Fallback heuristic if headers were slightly different (based on standard GWDS format)
+  if (colMap['rmsId'] === undefined && rows.length > 0) {
+    headerRowIndex = 0;
+    colMap['company'] = 0;
+    colMap['rmsId'] = 1;
+    colMap['riderName'] = 2;
+    colMap['labourCardNum'] = 10;
+    colMap['personCode'] = 11;
+  }
+
+  const byPersonCode: Record<string, MasterRecord> = {};
+  const byName: Record<string, MasterRecord> = {};
+  const records: MasterRecord[] = [];
+
+  for (let i = headerRowIndex + 1; i < rows.length; i++) {
+    const r = rows[i] || [];
+    if (!r || r.length === 0) continue;
+
+    const rmsIdVal = colMap['rmsId'] !== undefined ? String(r[colMap['rmsId']] ?? '').trim() : '';
+    const personCodeRaw = colMap['personCode'] !== undefined ? String(r[colMap['personCode']] ?? '').trim() : '';
+    const labourCardRaw = colMap['labourCardNum'] !== undefined ? String(r[colMap['labourCardNum']] ?? '').trim() : '';
+    const riderNameVal = colMap['riderName'] !== undefined ? String(r[colMap['riderName']] ?? '').trim() : '';
+    const projectVal = colMap['project'] !== undefined ? String(r[colMap['project']] ?? '').trim() : '';
+    const riderStatusVal = colMap['riderStatus'] !== undefined ? String(r[colMap['riderStatus']] ?? '').trim() : '';
+    const mobileVal = colMap['mobile'] !== undefined ? String(r[colMap['mobile']] ?? '').trim() : '';
+    const eidVal = colMap['eidNumber'] !== undefined ? String(r[colMap['eidNumber']] ?? '').trim() : '';
+    const emailVal = colMap['email'] !== undefined ? String(r[colMap['email']] ?? '').trim() : '';
+    const companyVal = colMap['company'] !== undefined ? String(r[colMap['company']] ?? '').trim() : '';
+    const nationalityVal = colMap['nationality'] !== undefined ? String(r[colMap['nationality']] ?? '').trim() : '';
+
+    // Ignore completely empty rows
+    if (!rmsIdVal && !personCodeRaw && !riderNameVal) continue;
+
+    const record: MasterRecord = {
+      rmsId: rmsIdVal,
+      personCode: personCodeRaw,
+      riderName: riderNameVal,
+      labourCardNum: labourCardRaw,
+      project: projectVal,
+      riderStatus: riderStatusVal,
+      mobile: mobileVal,
+      eidNumber: eidVal,
+      email: emailVal,
+      company: companyVal,
+      nationality: nationalityVal
+    };
+
+    records.push(record);
+
+    // Primary index: Normalized Person Code
+    const normPersonCode = normalizeLookupCode(personCodeRaw);
+    if (normPersonCode && normPersonCode !== '0') {
+      byPersonCode[normPersonCode] = record;
+      byPersonCode[personCodeRaw] = record;
+    }
+
+    // Secondary index: Labour Card Number
+    const normLabourCard = normalizeLookupCode(labourCardRaw);
+    if (normLabourCard && normLabourCard !== '0' && !byPersonCode[normLabourCard]) {
+      byPersonCode[normLabourCard] = record;
+    }
+
+    // Name index: Clean English letters for fallback match
+    const cleanName = cleanEnglishName(riderNameVal).toLowerCase().replace(/\s+/g, ' ').trim();
+    if (cleanName && cleanName.length > 3) {
+      byName[cleanName] = record;
+    }
+  }
+
+  return {
+    fileName: file.name,
+    totalRecords: records.length,
+    byPersonCode,
+    byName,
+    records
+  };
+};
+
+/**
+ * Exports the combined WPS + RMS mapping table to an Excel file.
+ */
+export const downloadRmsXlsx = (data: CleanedRowWithRMS[], fileName: string) => {
+  const headers = [
+    "SNO",
+    "RMS ID",
+    "Person Code (PK)",
+    "Person Name (WPS)",
+    "WPS Status",
+    "Paid (AED)",
+    "Contract (AED)",
+    "Outstanding (AED)"
+  ];
+
+  const wsData = [
+    headers,
+    ...data.map(r => [
+      r.sno,
+      r.rmsId || 'NOT FOUND',
+      r.code,
+      r.name,
+      r.status || '',
+      r.paid,
+      r.contract,
+      r.outstanding
+    ])
+  ];
+
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "RMS_Mapping");
   XLSX.writeFile(wb, fileName);
 };

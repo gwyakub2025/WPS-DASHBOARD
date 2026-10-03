@@ -1,3 +1,5 @@
+export type WPSStatus = 'Paid List' | 'Need to Pay' | 'Excluded';
+
 export interface CleanedRow {
   sno: string;
   name: string;
@@ -6,6 +8,38 @@ export interface CleanedRow {
   contract: number;
   remark: string;
   outstanding: number;
+  status?: WPSStatus;
+  rmsId?: string;
+  isRmsMatched?: boolean;
+}
+
+export interface MasterRecord {
+  rmsId: string;
+  personCode: string;
+  riderName: string;
+  nationality?: string;
+  mobile?: string;
+  email?: string;
+  passportNo?: string;
+  labourCardNum?: string;
+  eidNumber?: string;
+  riderStatus?: string;
+  project?: string;
+  company?: string;
+}
+
+export interface MasterDataset {
+  fileName: string;
+  totalRecords: number;
+  byPersonCode: Record<string, MasterRecord>;
+  byName: Record<string, MasterRecord>;
+  records: MasterRecord[];
+}
+
+export interface CleanedRowWithRMS extends CleanedRow {
+  rmsId?: string;
+  isRmsMatched?: boolean;
+  masterRecord?: MasterRecord;
 }
 
 export interface DashboardData {
